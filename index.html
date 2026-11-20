@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1F5FAD">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Labor">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Labor-App</title>
+<style>
+    :root {
+        --bg: #F4F6F9; --card: #FFFFFF; --ink: #151B23; --mute: #55606E; --line: #E1E6EE;
+        --acc: #1F5FAD; --acc-dark: #174A88; --acc-soft: #E6EEF8; --acc-ink: #123C70; --track: #E3E8EF;
+        --warn: #A8510A; --warn-soft: #FBEBDC; --star: #E0A100;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif; font-size: 16px; line-height: 1.35; }
+    button, input, select { font: inherit; color: inherit; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 18px) 20px calc(env(safe-area-inset-bottom) + 110px); }
+    .tab { display: none; flex-direction: column; gap: 16px; }
+    .tab.active { display: flex; }
+    h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+    h2 { margin: 0; font-size: 18px; font-weight: 700; }
+    .mute { color: var(--mute); }
+    .small { font-size: 13px; line-height: 1.45; }
+    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: #E5E9F0; }
+    .seg button { height: 44px; border-radius: 12px; border: 0; background: transparent; color: var(--mute); font-size: 15px; font-weight: 500; cursor: pointer; }
+    .seg button.on { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+    .subst { display: flex; align-items: center; gap: 12px; padding: 14px 16px; width: 100%; text-align: left; cursor: pointer; min-height: 64px; }
+    .subst .k { font-size: 13px; font-weight: 600; color: var(--mute); }
+    .subst .n { font-size: 19px; font-weight: 700; display: block; }
+    .subst .d { font-size: 14px; color: var(--mute); }
+    .subst .chg { font-size: 14px; font-weight: 600; color: var(--acc); white-space: nowrap; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field > label, .field > .lab { font-size: 15px; font-weight: 600; color: var(--mute); }
+    .inrow { display: flex; gap: 8px; }
+    .num { flex: 1; min-width: 0; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-size: 22px; font-weight: 700; }
+    .num:focus, .txt:focus { outline: 2px solid var(--acc); outline-offset: 0; border-color: var(--acc); }
+    .unit { width: 104px; height: 56px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-size: 18px; font-weight: 700; text-align: center; text-align-last: center; -webkit-appearance: none; appearance: none; cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2355606E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 10px center; }
+    .result { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 20px; background: var(--acc); color: #fff; }
+    .result .k { font-size: 15px; font-weight: 600; color: #D4E2F5; }
+    .result .v { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; word-break: break-word; }
+    .result .t { font-size: 15px; color: #E3ECF8; line-height: 1.45; }
+    .result.empty { background: var(--card); color: var(--mute); border: 1px dashed #C9D2DE; }
+    .result.err { background: var(--warn-soft); color: #6B3406; }
+    .pip { display: flex; flex-direction: column; gap: 12px; padding: 18px; }
+    .pip .line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .pip .line span:first-child { font-size: 17px; font-weight: 600; }
+    .pip .line b { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+    .pip .line b.acc { color: var(--acc); }
+    .ratio { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--track); }
+    .ratio div { background: var(--acc); }
+    .warnbox { padding: 10px 12px; border-radius: 12px; background: var(--warn-soft); color: #6B3406; font-size: 14px; line-height: 1.4; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--card); font-size: 14px; font-weight: 600; cursor: pointer; }
+    .chip.on { border-color: var(--acc); background: var(--acc-soft); color: var(--acc-ink); }
+    .linkbtn { border: 0; background: none; padding: 0; color: var(--acc); font-size: 14px; font-weight: 600; cursor: pointer; min-height: 32px; text-align: left; }
+    .formula { font-size: 13px; color: var(--mute); line-height: 1.45; font-variant-numeric: tabular-nums; }
+
+    /* Substanzen */
+    .search { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+    .search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+    .box { overflow: hidden; }
+    .box-h { padding: 12px 16px 8px; font-size: 13px; font-weight: 700; color: var(--mute); text-transform: uppercase; letter-spacing: 0.04em; }
+    .srow { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
+    .srow .main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 4px 10px 16px; border: 0; background: none; text-align: left; cursor: pointer; min-height: 60px; }
+    .srow .nm { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .srow .fo { font-size: 14px; color: var(--mute); }
+    .srow .mw { font-size: 16px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .star { width: 44px; height: 44px; border: 0; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+    .own { font-size: 12px; font-weight: 700; color: var(--acc-ink); background: var(--acc-soft); padding: 2px 7px; border-radius: 6px; }
+    .pbtn { height: 52px; border-radius: 16px; border: 0; background: var(--acc); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .sbtn { height: 52px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); font-size: 16px; font-weight: 600; cursor: pointer; }
+    .pick-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--acc-soft); color: var(--acc-ink); font-weight: 600; }
+
+    /* Reiter unten */
+    nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 6px 12px calc(env(safe-area-inset-bottom) + 8px); background: rgba(255,255,255,0.96); border-top: 1px solid var(--line); z-index: 10; }
+    nav.tabs button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 56px; border: 0; background: none; color: var(--mute); font-size: 12px; font-weight: 500; cursor: pointer; }
+    nav.tabs button.on { color: var(--acc); font-weight: 700; }
+
+    /* Dialog eigene Substanz */
+    .modal { position: fixed; inset: 0; background: rgba(12, 18, 28, 0.5); display: none; align-items: flex-end; justify-content: center; z-index: 20; }
+    .modal.open { display: flex; }
+    .sheet { width: 100%; max-width: 560px; background: var(--card); border-radius: 22px 22px 0 0; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px); display: flex; flex-direction: column; gap: 12px; max-height: 92vh; overflow-y: auto; }
+    .txt { height: 52px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-size: 17px; }
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ======================= Lösung ansetzen ======================= -->
+<section class="tab active" id="tab-sol" aria-label="Lösung ansetzen">
+    <h1>Lösung ansetzen</h1>
+    <div class="seg" role="group" aria-label="Was berechnen?">
+        <button type="button" id="sol-mode-mass" class="on" onclick="setSolMode('mass')">Masse berechnen</button>
+        <button type="button" id="sol-mode-conc" onclick="setSolMode('conc')">Konzentration berechnen</button>
+    </div>
+    <button type="button" class="card subst" onclick="pickSubstance('sol')">
+        <span style="flex: 1; min-width: 0">
+            <span class="k">Substanz</span>
+            <span class="n" id="sol-sub-name">–</span>
+            <span class="d" id="sol-sub-desc"></span>
+        </span>
+        <span class="chg">Ändern</span>
+    </button>
+    <button type="button" class="linkbtn" id="sol-mw-toggle" onclick="toggleManualMw()">Molmasse von Hand eingeben</button>
+    <div class="field" id="sol-mw-field" hidden>
+        <label for="sol-mw">Molmasse</label>
+        <div class="inrow"><input class="num" id="sol-mw" inputmode="decimal" autocomplete="off" oninput="calcSol()"><span class="unit" style="display: flex; align-items: center; justify-content: center; background-image: none">g/mol</span></div>
+    </div>
+
+    <div class="field" id="sol-c-field">
+        <label for="sol-c">Gewünschte Konzentration</label>
+        <div class="inrow"><input class="num" id="sol-c" inputmode="decimal" autocomplete="off" oninput="calcSol()">
+            <select class="unit" id="sol-cu" aria-label="Einheit der Konzentration" onchange="calcSol()"></select></div>
+    </div>
+    <div class="field" id="sol-m-field" hidden>
+        <label for="sol-m">Eingewogene Masse</label>
+        <div class="inrow"><input class="num" id="sol-m" inputmode="decimal" autocomplete="off" oninput="calcSol()">
+            <select class="unit" id="sol-mu" aria-label="Einheit der Masse" onchange="calcSol()"></select></div>
+    </div>
+    <div class="field">
+        <label for="sol-v">Endvolumen</label>
+        <div class="inrow"><input class="num" id="sol-v" inputmode="decimal" autocomplete="off" oninput="calcSol()">
+            <select class="unit" id="sol-vu" aria-label="Einheit des Volumens" onchange="calcSol()"></select></div>
+    </div>
+    <div class="result empty" id="sol-result" aria-live="polite"></div>
+    <div class="formula" id="sol-formula"></div>
+</section>
+
+<!-- ======================= Verdünnen ======================= -->
+<section class="tab" id="tab-dil" aria-label="Verdünnen">
+    <h1>Verdünnen</h1>
+    <div class="chips" role="group" aria-label="Schnellwahl">
+        <button type="button" class="chip" onclick="quickDil(10, 1, '×')">10× → 1×</button>
+        <button type="button" class="chip" onclick="quickDil(50, 1, '×')">50× → 1×</button>
+        <button type="button" class="chip" onclick="quickDil(100, 1, '×')">1 : 100</button>
+        <button type="button" class="chip" onclick="quickDil(1000, 1, '×')">1 : 1000</button>
+    </div>
+    <div class="field">
+        <label for="dil-c1">Stammlösung (C1)</label>
+        <div class="inrow"><input class="num" id="dil-c1" inputmode="decimal" autocomplete="off" oninput="calcDil()">
+            <select class="unit" id="dil-c1u" aria-label="Einheit Stammlösung" onchange="calcDil()"></select></div>
+    </div>
+    <div class="field">
+        <label for="dil-c2">Zielkonzentration (C2)</label>
+        <div class="inrow"><input class="num" id="dil-c2" inputmode="decimal" autocomplete="off" oninput="calcDil()">
+            <select class="unit" id="dil-c2u" aria-label="Einheit Zielkonzentration" onchange="calcDil()"></select></div>
+    </div>
+    <div class="field">
+        <label for="dil-v2">Endvolumen (V2)</label>
+        <div class="inrow"><input class="num" id="dil-v2" inputmode="decimal" autocomplete="off" oninput="calcDil()">
+            <select class="unit" id="dil-v2u" aria-label="Einheit Endvolumen" onchange="calcDil()"></select></div>
+    </div>
+    <div id="dil-sub-wrap" hidden>
+        <button type="button" class="card subst" onclick="pickSubstance('dil')">
+            <span style="flex: 1; min-width: 0">
+                <span class="k">Substanz (für Umrechnung M ↔ mg/ml)</span>
+                <span class="n" id="dil-sub-name">keine gewählt</span>
+                <span class="d" id="dil-sub-desc"></span>
+            </span>
+            <span class="chg">Wählen</span>
+        </button>
+    </div>
+    <div id="dil-result" aria-live="polite"></div>
+    <div class="formula" id="dil-formula"></div>
+</section>
+
+<!-- ======================= Substanzen ======================= -->
+<section class="tab" id="tab-sub" aria-label="Substanzen">
+    <h1 id="sub-title">Substanzen</h1>
+    <div class="pick-bar" id="pick-bar" hidden>
+        <span>Substanz antippen, um sie zu übernehmen</span>
+        <button type="button" class="linkbtn" onclick="cancelPick()">Abbrechen</button>
+    </div>
+    <div class="search">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#55606E" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <label for="sub-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Substanz suchen</label>
+        <input id="sub-search" type="search" placeholder="Suchen, z. B. Tris, EDTA" autocomplete="off" oninput="renderSubs()">
+    </div>
+    <div id="sub-lists" style="display: flex; flex-direction: column; gap: 16px"></div>
+    <button type="button" class="pbtn" onclick="openSubEditor(null)">+ Eigene Substanz</button>
+    <p class="small mute" style="margin: 0">Molmassen der jeweils genannten Form (wasserfrei oder Hydrat). Bitte immer mit dem Etikett der eigenen Packung vergleichen.</p>
+    <div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+        <button type="button" class="sbtn" onclick="location.reload()">↻ App neu laden</button>
+        <span class="small mute" id="app-version"></span>
+    </div>
+</section>
+</div>
+
+<nav class="tabs" aria-label="Rechner">
+    <button type="button" id="nav-sol" class="on" onclick="showTab('sol')">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"></path><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"></path><path d="M7.5 15h9"></path></svg>
+        Lösung
+    </button>
+    <button type="button" id="nav-dil" onclick="showTab('dil')">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"></path><path d="M9 14a3 3 0 0 0 3 3"></path></svg>
+        Verdünnen
+    </button>
+    <button type="button" id="nav-sub" onclick="showTab('sub')">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg>
+        Substanzen
+    </button>
+</nav>
+
+<!-- Eigene Substanz -->
+<div class="modal" id="sub-modal" onclick="if (event.target === this) closeSubEditor()">
+    <form class="sheet" onsubmit="event.preventDefault(); saveSubEditor();">
+        <h2 id="sub-ed-title">Eigene Substanz</h2>
+        <div class="field"><label for="ed-name">Name</label><input class="txt" id="ed-name" autocomplete="off" placeholder="z. B. Zeocin"></div>
+        <div class="field"><label for="ed-mw">Molmasse (g/mol)</label><input class="txt" id="ed-mw" inputmode="decimal" autocomplete="off" placeholder="z. B. 1535,6"></div>
+        <div class="field"><label for="ed-desc">Formel oder Notiz (optional)</label><input class="txt" id="ed-desc" autocomplete="off" placeholder="z. B. Lagerung −20 °C"></div>
+        <div class="grid2">
+            <button type="button" class="sbtn" onclick="closeSubEditor()">Abbrechen</button>
+            <button type="submit" class="pbtn">Speichern</button>
+        </div>
+        <button type="button" class="sbtn" id="ed-delete" style="color: #9B1C1C" onclick="deleteSubEditor()" hidden>Löschen</button>
+    </form>
+</div>
+
+<script>
+    var APP_VERSION = '1.0 · 2026-11-20';
+
+    // ---------------------------------------------------------------
+    // Substanzen (Molmasse der genannten Form, g/mol)
+    // ---------------------------------------------------------------
+    var BASE_SUBSTANCES = [
+        ['tris', 'Tris (Base)', 'C₄H₁₁NO₃', 121.14],
+        ['trishcl', 'Tris-HCl', 'C₄H₁₁NO₃ · HCl', 157.60],
+        ['nacl', 'NaCl', 'Natriumchlorid', 58.44],
+        ['kcl', 'KCl', 'Kaliumchlorid', 74.55],
+        ['mgcl2_6', 'MgCl₂ · 6 H₂O', 'Magnesiumchlorid Hexahydrat', 203.30],
+        ['mgcl2', 'MgCl₂ (wasserfrei)', 'Magnesiumchlorid', 95.21],
+        ['mgso4_7', 'MgSO₄ · 7 H₂O', 'Magnesiumsulfat Heptahydrat', 246.47],
+        ['cacl2_2', 'CaCl₂ · 2 H₂O', 'Calciumchlorid Dihydrat', 147.01],
+        ['cacl2', 'CaCl₂ (wasserfrei)', 'Calciumchlorid', 110.98],
+        ['mncl2_4', 'MnCl₂ · 4 H₂O', 'Manganchlorid Tetrahydrat', 197.91],
+        ['zncl2', 'ZnCl₂', 'Zinkchlorid', 136.30],
+        ['edta_na2', 'EDTA-Na₂ · 2 H₂O', 'Dinatrium-EDTA Dihydrat', 372.24],
+        ['edta', 'EDTA (freie Säure)', 'C₁₀H₁₆N₂O₈', 292.24],
+        ['egta', 'EGTA', 'C₁₄H₂₄N₂O₁₀', 380.35],
+        ['hepes', 'HEPES', 'C₈H₁₈N₂O₄S', 238.30],
+        ['mops', 'MOPS', 'C₇H₁₅NO₄S', 209.26],
+        ['mes', 'MES (wasserfrei)', 'C₆H₁₃NO₄S', 195.24],
+        ['pipes', 'PIPES', 'C₈H₁₈N₂O₆S₂', 302.37],
+        ['glycin', 'Glycin', 'C₂H₅NO₂', 75.07],
+        ['naac', 'Natriumacetat (wasserfrei)', 'CH₃COONa', 82.03],
+        ['naac_3', 'Natriumacetat · 3 H₂O', 'Trihydrat', 136.08],
+        ['nacit_2', 'Trinatriumcitrat · 2 H₂O', 'Natriumcitrat Dihydrat', 294.10],
+        ['na2hpo4', 'Na₂HPO₄ (wasserfrei)', 'Dinatriumhydrogenphosphat', 141.96],
+        ['na2hpo4_2', 'Na₂HPO₄ · 2 H₂O', 'Dihydrat', 177.99],
+        ['na2hpo4_7', 'Na₂HPO₄ · 7 H₂O', 'Heptahydrat', 268.07],
+        ['nah2po4_1', 'NaH₂PO₄ · H₂O', 'Natriumdihydrogenphosphat Monohydrat', 137.99],
+        ['nah2po4_2', 'NaH₂PO₄ · 2 H₂O', 'Dihydrat', 156.01],
+        ['kh2po4', 'KH₂PO₄', 'Kaliumdihydrogenphosphat', 136.09],
+        ['k2hpo4', 'K₂HPO₄', 'Dikaliumhydrogenphosphat', 174.18],
+        ['nahco3', 'NaHCO₃', 'Natriumhydrogencarbonat', 84.01],
+        ['naoh', 'NaOH', 'Natriumhydroxid', 40.00],
+        ['koh', 'KOH', 'Kaliumhydroxid', 56.11],
+        ['nh4so4', '(NH₄)₂SO₄', 'Ammoniumsulfat', 132.14],
+        ['nh4cl', 'NH₄Cl', 'Ammoniumchlorid', 53.49],
+        ['imidazol', 'Imidazol', 'C₃H₄N₂', 68.08],
+        ['harnstoff', 'Harnstoff', 'CH₄N₂O', 60.06],
+        ['guhcl', 'Guanidiniumhydrochlorid', 'CH₅N₃ · HCl', 95.53],
+        ['glucose', 'D-Glucose (wasserfrei)', 'C₆H₁₂O₆', 180.16],
+        ['saccharose', 'Saccharose', 'C₁₂H₂₂O₁₁', 342.30],
+        ['glycerin', 'Glycerin', 'C₃H₈O₃', 92.09],
+        ['sds', 'SDS', 'Natriumdodecylsulfat', 288.38],
+        ['doc', 'Natriumdesoxycholat', 'C₂₄H₃₉NaO₄', 414.55],
+        ['dtt', 'DTT', 'Dithiothreitol', 154.25],
+        ['bme', 'β-Mercaptoethanol', 'C₂H₆OS', 78.13],
+        ['tcep', 'TCEP-HCl', 'C₉H₁₅O₆P · HCl', 286.65],
+        ['pmsf', 'PMSF', 'Phenylmethylsulfonylfluorid', 174.19],
+        ['benzamidin', 'Benzamidin-HCl (wasserfrei)', 'C₇H₈N₂ · HCl', 156.61],
+        ['naf', 'NaF', 'Natriumfluorid', 41.99],
+        ['vanadat', 'Na₃VO₄', 'Natriumorthovanadat', 183.91],
+        ['bgp', 'β-Glycerophosphat-Na₂ · 5 H₂O', 'Pentahydrat', 306.11],
+        ['nan3', 'NaN₃', 'Natriumazid', 65.01],
+        ['atp', 'ATP-Dinatriumsalz', 'C₁₀H₁₄N₅Na₂O₁₃P₃', 551.14],
+        ['iptg', 'IPTG', 'C₉H₁₈O₅S', 238.30],
+        ['xgal', 'X-Gal', 'C₁₄H₁₅BrClNO₆', 408.63],
+        ['amp', 'Ampicillin-Natrium', 'Antibiotikum', 371.39],
+        ['carb', 'Carbenicillin-Dinatrium', 'Antibiotikum', 422.36],
+        ['kan', 'Kanamycinsulfat', 'Antibiotikum', 582.58],
+        ['cam', 'Chloramphenicol', 'Antibiotikum', 323.13],
+        ['tet', 'Tetracyclin-HCl', 'Antibiotikum', 480.90],
+        ['spec', 'Spectinomycin-2 HCl · 5 H₂O', 'Antibiotikum', 495.35],
+        ['puro', 'Puromycin-Dihydrochlorid', 'Selektion Zellkultur', 544.43],
+        ['hygro', 'Hygromycin B', 'Selektion Zellkultur', 527.52],
+        ['g418', 'G418-Disulfat (Geneticin)', 'Selektion Zellkultur', 692.71],
+        ['blast', 'Blasticidin S-HCl', 'Selektion Zellkultur', 458.90],
+        ['glutamin', 'L-Glutamin', 'C₅H₁₀N₂O₃', 146.14],
+        ['pyruvat', 'Natriumpyruvat', 'C₃H₃NaO₃', 110.04],
+        ['ascorbin', 'L-Ascorbinsäure', 'Vitamin C', 176.12],
+        ['dapi', 'DAPI-Dihydrochlorid', 'Kernfarbstoff', 350.25],
+        ['etbr', 'Ethidiumbromid', 'C₂₁H₂₀BrN₃', 394.29]
+    ].map(function(r) { return { id: r[0], name: r[1], desc: r[2], mw: r[3] }; });
+
+    // ---------------------------------------------------------------
+    // Einheiten
+    // ---------------------------------------------------------------
+    // Konzentration: type 'mol' (Faktor → mol/l), 'mass' (→ g/l), 'x' (×-fach)
+    var CONC = {
+        'M': { t: 'mol', f: 1 }, 'mM': { t: 'mol', f: 1e-3 }, 'µM': { t: 'mol', f: 1e-6 }, 'nM': { t: 'mol', f: 1e-9 },
+        'mg/ml': { t: 'mass', f: 1 }, 'µg/ml': { t: 'mass', f: 1e-3 }, '% (w/v)': { t: 'mass', f: 10 }, '×': { t: 'x', f: 1 }
+    };
+    var VOL = { 'l': 1, 'ml': 1e-3, 'µl': 1e-6 };
+    var MASS = { 'g': 1, 'mg': 1e-3, 'µg': 1e-6 };
+
+    // ---------------------------------------------------------------
+    // Hilfen
+    // ---------------------------------------------------------------
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function parseDe(s) {
+        s = String(s == null ? '' : s).trim().replace(/\s+/g, '');
+        if (!s) return NaN;
+        if (s.indexOf(',') !== -1) s = s.replace(/\./g, '').replace(',', '.');   // 1.234,5 → 1234.5
+        return Number(s);
+    }
+    // 4 signifikante Stellen, deutsches Format
+    function fmt(x, sig) {
+        if (!isFinite(x)) return '–';
+        if (x === 0) return '0';
+        var v = Number(x.toPrecision(sig || 4));
+        var dec = Math.max(0, (sig || 4) - 1 - Math.floor(Math.log10(Math.abs(v))));
+        return v.toLocaleString('de-DE', { maximumFractionDigits: Math.min(dec, 10) });
+    }
+    function load(key, fb) { try { var v = JSON.parse(localStorage.getItem(key)); return v == null ? fb : v; } catch (e) { return fb; } }
+    function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} }
+    function fillSelect(el, units, sel) {
+        el.innerHTML = units.map(function(u) { return '<option value="' + esc(u) + '">' + esc(u) + '</option>'; }).join('');
+        el.value = sel;
+    }
+    // Masse in passender Einheit
+    function fmtMass(g) {
+        var a = Math.abs(g);
+        if (a >= 1) return fmt(g) + ' g';
+        if (a >= 1e-3) return fmt(g * 1e3) + ' mg';
+        return fmt(g * 1e6) + ' µg';
+    }
+    function fmtVol(l) {
+        var a = Math.abs(l);
+        if (a >= 1) return fmt(l) + ' l';
+        if (a >= 1e-3) return fmt(l * 1e3) + ' ml';
+        return fmt(l * 1e6) + ' µl';
+    }
+    function fmtMolar(molPerL) {
+        var a = Math.abs(molPerL);
+        if (a >= 0.1) return fmt(molPerL) + ' M';
+        if (a >= 1e-4) return fmt(molPerL * 1e3) + ' mM';
+        if (a >= 1e-7) return fmt(molPerL * 1e6) + ' µM';
+        return fmt(molPerL * 1e9) + ' nM';
+    }
+    function fmtMassConc(gPerL) {
+        var a = Math.abs(gPerL);
+        if (a >= 0.1) return fmt(gPerL) + ' mg/ml';
+        return fmt(gPerL * 1e3) + ' µg/ml';
+    }
+
+    // ---------------------------------------------------------------
+    // Zustand
+    // ---------------------------------------------------------------
+    var st = load('labor.state', null) || {
+        sol: { mode: 'mass', sub: 'tris', mwManual: false, mw: '', c: '1', cu: 'M', m: '', mu: 'g', v: '500', vu: 'ml' },
+        dil: { c1: '0,5', c1u: 'M', c2: '5', c2u: 'mM', v2: '50', v2u: 'ml', sub: 'edta_na2' },
+        tab: 'sol'
+    };
+    var favs = load('labor.favs', ['tris', 'nacl', 'edta_na2', 'kan']);
+    var own = load('labor.own', []);
+    var picking = null;   // 'sol' | 'dil' | null
+    var editingId = null;
+
+    function allSubs() { return own.concat(BASE_SUBSTANCES); }
+    function getSub(id) { return allSubs().find(function(s) { return s.id === id; }) || null; }
+    function persist() { save('labor.state', st); }
+
+    // ---------------------------------------------------------------
+    // Reiter
+    // ---------------------------------------------------------------
+    function showTab(t) {
+        if (t !== 'sub' && picking) cancelPick(true);
+        ['sol', 'dil', 'sub'].forEach(function(x) {
+            $('tab-' + x).classList.toggle('active', x === t);
+            $('nav-' + x).classList.toggle('on', x === t);
+            if (x === t) $('nav-' + x).setAttribute('aria-current', 'page'); else $('nav-' + x).removeAttribute('aria-current');
+        });
+        st.tab = t; persist();
+        window.scrollTo(0, 0);
+        if (t === 'sub') renderSubs();
+    }
+
+    // ---------------------------------------------------------------
+    // Lösung ansetzen
+    // ---------------------------------------------------------------
+    function setSolMode(m) {
+        st.sol.mode = m;
+        $('sol-mode-mass').classList.toggle('on', m === 'mass');
+        $('sol-mode-conc').classList.toggle('on', m === 'conc');
+        $('sol-c-field').hidden = m !== 'mass';
+        $('sol-m-field').hidden = m !== 'conc';
+        calcSol();
+    }
+    function toggleManualMw() {
+        st.sol.mwManual = !st.sol.mwManual;
+        if (st.sol.mwManual && !st.sol.mw) { var s = getSub(st.sol.sub); if (s) st.sol.mw = String(s.mw).replace('.', ','); }
+        renderSolSub();
+        calcSol();
+        if (st.sol.mwManual) $('sol-mw').focus();
+    }
+    function renderSolSub() {
+        var s = getSub(st.sol.sub);
+        if (st.sol.mwManual) {
+            $('sol-sub-name').innerText = 'Eigene Molmasse';
+            $('sol-sub-desc').innerText = 'von Hand eingegeben';
+            $('sol-mw-field').hidden = false;
+            $('sol-mw').value = st.sol.mw || '';
+            $('sol-mw-toggle').innerText = 'Substanz aus der Liste verwenden';
+        } else {
+            $('sol-sub-name').innerText = s ? s.name : 'Substanz wählen';
+            $('sol-sub-desc').innerText = s ? (s.desc ? s.desc + ' · ' : '') + fmt(s.mw, 6) + ' g/mol' : '';
+            $('sol-mw-field').hidden = true;
+            $('sol-mw-toggle').innerText = 'Molmasse von Hand eingeben';
+        }
+    }
+    function solMw() {
+        if (st.sol.mwManual) return parseDe($('sol-mw').value);
+        var s = getSub(st.sol.sub);
+        return s ? s.mw : NaN;
+    }
+    function solName() {
+        if (st.sol.mwManual) return 'Substanz';
+        var s = getSub(st.sol.sub);
+        return s ? s.name : 'Substanz';
+    }
+
+    function calcSol() {
+        var S = st.sol;
+        S.c = $('sol-c').value; S.cu = $('sol-cu').value; S.m = $('sol-m').value; S.mu = $('sol-mu').value;
+        S.v = $('sol-v').value; S.vu = $('sol-vu').value;
+        if (S.mwManual) S.mw = $('sol-mw').value;
+        persist();
+        var res = $('sol-result'), form = $('sol-formula');
+        var V = parseDe(S.v) * VOL[S.vu];       // l
+        var mw = solMw();
+        function show(cls, html) { res.className = 'result' + (cls ? ' ' + cls : ''); res.innerHTML = html; }
+
+        if (S.mode === 'mass') {
+            var c = parseDe(S.c), u = CONC[S.cu];
+            if (!(c > 0) || !(V > 0)) { show('empty', '<span>Konzentration und Volumen eingeben.</span>'); form.innerText = ''; return; }
+            var grams;
+            if (u.t === 'mol') {
+                if (!(mw > 0)) { show('err', '<span>Für molare Einheiten bitte eine Substanz wählen oder die Molmasse eingeben.</span>'); form.innerText = ''; return; }
+                grams = c * u.f * V * mw;
+                form.innerText = 'm = c × V × M  →  ' + fmt(c * u.f) + ' mol/l × ' + fmt(V) + ' l × ' + fmt(mw, 6) + ' g/mol';
+            } else {
+                grams = c * u.f * V;   // g/l × l
+                form.innerText = 'm = c × V  →  ' + fmt(c * u.f) + ' g/l × ' + fmt(V) + ' l' + (S.cu === '% (w/v)' ? '   (1 % w/v = 10 g/l)' : '');
+            }
+            var hint = solName() + ' für ' + fmt(parseDe(S.v)) + ' ' + S.vu + ' einer ' + fmt(c) + ' ' + S.cu + ' Lösung. In weniger Lösungsmittel lösen, ggf. pH einstellen, dann auf ' + fmt(parseDe(S.v)) + ' ' + S.vu + ' auffüllen.';
+            show('', '<span class="k">Einwaage</span><span class="v">' + fmtMass(grams) + '</span><span class="t">' + esc(hint) + '</span>');
+        } else {
+            var m = parseDe(S.m) * MASS[S.mu];
+            if (!(m > 0) || !(V > 0)) { show('empty', '<span>Masse und Volumen eingeben.</span>'); form.innerText = ''; return; }
+            var gPerL = m / V;
+            var lines = '<span class="v">' + (mw > 0 ? fmtMolar(gPerL / mw) : fmtMassConc(gPerL)) + '</span>';
+            var extra = (mw > 0 ? '= ' + fmtMassConc(gPerL) + ' · ' : '') + '= ' + fmt(gPerL / 10) + ' % (w/v)';
+            show('', '<span class="k">Konzentration</span>' + lines + '<span class="t">' + esc(extra) + (mw > 0 ? '' : ' · Für molar bitte Substanz wählen.') + '</span>');
+            form.innerText = mw > 0 ? 'c = m / (V × M)  →  ' + fmt(m) + ' g / (' + fmt(V) + ' l × ' + fmt(mw, 6) + ' g/mol)' : 'c = m / V  →  ' + fmt(m) + ' g / ' + fmt(V) + ' l';
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Verdünnen
+    // ---------------------------------------------------------------
+    function quickDil(c1, c2, unit) {
+        $('dil-c1').value = String(c1); $('dil-c1u').value = unit;
+        $('dil-c2').value = String(c2); $('dil-c2u').value = unit;
+        if (!parseDe($('dil-v2').value)) $('dil-v2').value = '1';
+        calcDil();
+    }
+    function renderDilSub() {
+        var s = getSub(st.dil.sub);
+        $('dil-sub-name').innerText = s ? s.name : 'keine gewählt';
+        $('dil-sub-desc').innerText = s ? fmt(s.mw, 6) + ' g/mol' : '';
+    }
+    function calcDil() {
+        var D = st.dil;
+        D.c1 = $('dil-c1').value; D.c1u = $('dil-c1u').value; D.c2 = $('dil-c2').value; D.c2u = $('dil-c2u').value;
+        D.v2 = $('dil-v2').value; D.v2u = $('dil-v2u').value;
+        persist();
+        var out = $('dil-result'), form = $('dil-formula');
+        var u1 = CONC[D.c1u], u2 = CONC[D.c2u];
+        var c1 = parseDe(D.c1), c2 = parseDe(D.c2), V2 = parseDe(D.v2) * VOL[D.v2u];
+        // Umrechnung M ↔ mg/ml nur nötig, wenn die Einheitenarten verschieden sind
+        var mixed = (u1.t !== u2.t) && u1.t !== 'x' && u2.t !== 'x';
+        $('dil-sub-wrap').hidden = !mixed;
+        form.innerText = '';
+        function box(cls, html) { out.innerHTML = '<div class="result ' + cls + '">' + html + '</div>'; }
+        if (!(c1 > 0) || !(c2 > 0) || !(V2 > 0)) { box('empty', '<span>Stammlösung, Zielkonzentration und Endvolumen eingeben.</span>'); return; }
+        if ((u1.t === 'x') !== (u2.t === 'x')) { box('err', '<span>„×“ bitte bei Stamm- und Zielkonzentration verwenden (z. B. 10× → 1×).</span>'); return; }
+        var a = c1 * u1.f, b = c2 * u2.f;   // in mol/l, g/l oder ×
+        if (mixed) {
+            var s = getSub(D.sub);
+            if (!s) { box('err', '<span>Stamm- und Zielkonzentration haben verschiedene Einheitenarten (molar / Masse). Bitte unten die Substanz wählen.</span>'); return; }
+            if (u1.t === 'mass') a = a / s.mw; else b = b / s.mw;   // alles in mol/l
+        }
+        if (b > a) { box('err', '<span>Die Zielkonzentration ist höher als die Stammlösung – so lässt sich nicht verdünnen.</span>'); return; }
+        var V1 = b * V2 / a, rest = V2 - V1, factor = a / b;
+        var pct = Math.max(1, Math.min(100, V1 / V2 * 100));
+        var warn = '';
+        if (V1 < 0.5e-6) warn = '<div class="warnbox">Unter 0,5 µl lässt sich kaum genau pipettieren. Besser eine Zwischenverdünnung machen (z. B. erst 1 : 100).</div>';
+        else if (V1 < 2e-6) warn = '<div class="warnbox">Sehr kleines Volumen – genau pipettieren oder Zwischenverdünnung erwägen.</div>';
+        out.innerHTML = '<div class="card pip"><span class="mute" style="font-size: 15px; font-weight: 600">Pipettieren · Verdünnung 1 : ' + fmt(factor) + '</span>' +
+            '<div class="line"><span>Stammlösung</span><b class="acc">' + fmtVol(V1) + '</b></div>' +
+            '<div class="line"><span>+ Wasser / Puffer</span><b>' + fmtVol(rest) + '</b></div>' +
+            '<div class="ratio" aria-hidden="true"><div style="width: ' + pct + '%"></div></div>' +
+            '<span class="small mute">Ergibt ' + fmt(parseDe(D.v2)) + ' ' + esc(D.v2u) + ' mit ' + fmt(c2) + ' ' + esc(D.c2u) + '</span>' + warn + '</div>';
+        form.innerText = 'V1 = C2 × V2 / C1  →  ' + fmt(c2) + ' ' + D.c2u + ' × ' + fmt(parseDe(D.v2)) + ' ' + D.v2u + ' / ' + fmt(c1) + ' ' + D.c1u;
+    }
+
+    // ---------------------------------------------------------------
+    // Substanzen
+    // ---------------------------------------------------------------
+    var STAR_ON = '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="#E0A100" stroke="#B07E00" stroke-width="1.4" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"></path></svg>';
+    var STAR_OFF = '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"></path></svg>';
+    function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[₀-₉]/g, function(c) { return String(c.charCodeAt(0) - 8320); }); }
+
+    function rowHtml(s) {
+        var fav = favs.indexOf(s.id) !== -1, isOwn = !!s.own;
+        return '<div class="srow"><button type="button" class="main" onclick="onSubTap(\'' + s.id + '\')">' +
+            '<span style="flex: 1; min-width: 0"><span class="nm">' + esc(s.name) + (isOwn ? '<span class="own">eigene</span>' : '') + '</span>' +
+            (s.desc ? '<span class="fo">' + esc(s.desc) + '</span>' : '') + '</span>' +
+            '<span class="mw">' + fmt(s.mw, 6) + ' g/mol</span></button>' +
+            '<button type="button" class="star" aria-pressed="' + fav + '" aria-label="' + esc(s.name) + (fav ? ' aus Favoriten entfernen' : ' zu Favoriten') + '" onclick="toggleFav(\'' + s.id + '\')">' + (fav ? STAR_ON : STAR_OFF) + '</button></div>';
+    }
+    function renderSubs() {
+        var q = norm($('sub-search').value.trim());
+        var list = allSubs().filter(function(s) { return !q || norm(s.name + ' ' + s.desc).indexOf(q) !== -1; });
+        var byName = function(a, b) { return a.name.localeCompare(b.name, 'de'); };
+        var favList = list.filter(function(s) { return favs.indexOf(s.id) !== -1; }).sort(byName);
+        var rest = list.filter(function(s) { return favs.indexOf(s.id) === -1; }).sort(byName);
+        var h = '';
+        if (favList.length) h += '<div class="card box"><div class="box-h">Favoriten</div>' + favList.map(rowHtml).join('') + '</div>';
+        if (rest.length) h += '<div class="card box"><div class="box-h">' + (q ? 'Treffer' : 'Alle') + ' · ' + rest.length + '</div>' + rest.map(rowHtml).join('') + '</div>';
+        if (!h) h = '<div class="card" style="padding: 16px">Nichts gefunden. Mit „+ Eigene Substanz“ kannst du sie anlegen.</div>';
+        $('sub-lists').innerHTML = h;
+    }
+    function toggleFav(id) {
+        var i = favs.indexOf(id);
+        if (i === -1) favs.push(id); else favs.splice(i, 1);
+        save('labor.favs', favs);
+        renderSubs();
+    }
+    function onSubTap(id) {
+        var s = getSub(id);
+        if (!s) return;
+        if (picking === 'sol') { st.sol.sub = id; st.sol.mwManual = false; persist(); renderSolSub(); var t = picking; cancelPick(true); showTab('sol'); calcSol(); return; }
+        if (picking === 'dil') { st.dil.sub = id; persist(); renderDilSub(); cancelPick(true); showTab('dil'); calcDil(); return; }
+        if (s.own) openSubEditor(id);
+    }
+    function pickSubstance(target) {
+        picking = target;
+        $('pick-bar').hidden = false;
+        $('sub-title').innerText = 'Substanz wählen';
+        $('sub-search').value = '';
+        showTab('sub');
+        setTimeout(function() { $('sub-search').focus(); }, 50);
+    }
+    function cancelPick(silent) {
+        var back = picking;
+        picking = null;
+        $('pick-bar').hidden = true;
+        $('sub-title').innerText = 'Substanzen';
+        if (!silent && back) showTab(back);
+    }
+
+    function openSubEditor(id) {
+        editingId = id;
+        var s = id ? getSub(id) : null;
+        $('sub-ed-title').innerText = s ? 'Eigene Substanz bearbeiten' : 'Eigene Substanz';
+        $('ed-name').value = s ? s.name : ($('sub-search').value || '');
+        $('ed-mw').value = s ? String(s.mw).replace('.', ',') : '';
+        $('ed-desc').value = s ? (s.desc || '') : '';
+        $('ed-delete').hidden = !s;
+        $('sub-modal').classList.add('open');
+        setTimeout(function() { $(s ? 'ed-mw' : 'ed-name').focus(); }, 50);
+    }
+    function closeSubEditor() { $('sub-modal').classList.remove('open'); editingId = null; }
+    function saveSubEditor() {
+        var name = $('ed-name').value.trim(), mw = parseDe($('ed-mw').value), desc = $('ed-desc').value.trim();
+        if (!name) { alert('Bitte einen Namen eingeben.'); return; }
+        if (!(mw > 0)) { alert('Bitte eine gültige Molmasse in g/mol eingeben.'); return; }
+        if (editingId) {
+            var s = own.find(function(x) { return x.id === editingId; });
+            if (s) { s.name = name; s.mw = mw; s.desc = desc; }
+        } else {
+            var id = 'own_' + Date.now().toString(36);
+            own.push({ id: id, name: name, mw: mw, desc: desc, own: true });
+            if (favs.indexOf(id) === -1) favs.push(id);
+            save('labor.favs', favs);
+            editingId = id;
+        }
+        save('labor.own', own);
+        var newId = editingId;
+        closeSubEditor();
+        renderSubs(); renderSolSub(); renderDilSub(); calcSol(); calcDil();
+        if (picking) onSubTap(newId);
+    }
+    function deleteSubEditor() {
+        if (!editingId || !confirm('Diese eigene Substanz löschen?')) return;
+        own = own.filter(function(x) { return x.id !== editingId; });
+        favs = favs.filter(function(x) { return x !== editingId; });
+        save('labor.own', own); save('labor.favs', favs);
+        closeSubEditor();
+        renderSubs(); renderSolSub(); renderDilSub(); calcSol(); calcDil();
+    }
+
+    // ---------------------------------------------------------------
+    // Start
+    // ---------------------------------------------------------------
+    (function init() {
+        var concUnits = Object.keys(CONC);
+        fillSelect($('sol-cu'), concUnits.filter(function(u) { return u !== '×'; }), st.sol.cu);
+        fillSelect($('sol-mu'), Object.keys(MASS), st.sol.mu);
+        fillSelect($('sol-vu'), Object.keys(VOL), st.sol.vu);
+        fillSelect($('dil-c1u'), concUnits, st.dil.c1u);
+        fillSelect($('dil-c2u'), concUnits, st.dil.c2u);
+        fillSelect($('dil-v2u'), Object.keys(VOL), st.dil.v2u);
+        $('sol-c').value = st.sol.c; $('sol-m').value = st.sol.m; $('sol-v').value = st.sol.v;
+        $('dil-c1').value = st.dil.c1; $('dil-c2').value = st.dil.c2; $('dil-v2').value = st.dil.v2;
+        $('app-version').innerText = 'Version ' + APP_VERSION + ' · ' + BASE_SUBSTANCES.length + ' Substanzen vorinstalliert';
+        renderSolSub(); renderDilSub();
+        setSolMode(st.sol.mode || 'mass');
+        calcDil();
+        showTab(st.tab === 'sub' ? 'sol' : (st.tab || 'sol'));
+    })();
+</script>
+</body>
+</html>
