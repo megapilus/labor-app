@@ -164,7 +164,7 @@
     <div id="dil-sub-wrap" hidden>
         <button type="button" class="card subst" onclick="pickSubstance('dil')">
             <span style="flex: 1; min-width: 0">
-                <span class="k">Substanz (für Umrechnung M ↔ mg/ml)</span>
+                <span class="k">Substanz (für Umrechnung molar ↔ g/ml, mg/ml …)</span>
                 <span class="n" id="dil-sub-name">keine gewählt</span>
                 <span class="d" id="dil-sub-desc"></span>
             </span>
@@ -228,7 +228,7 @@
 </div>
 
 <script>
-    var APP_VERSION = '1.0 · 2026-11-20';
+    var APP_VERSION = '1.1 · 2026-11-20';
 
     // ---------------------------------------------------------------
     // Substanzen (Molmasse der genannten Form, g/mol)
@@ -311,7 +311,8 @@
     // Konzentration: type 'mol' (Faktor → mol/l), 'mass' (→ g/l), 'x' (×-fach)
     var CONC = {
         'M': { t: 'mol', f: 1 }, 'mM': { t: 'mol', f: 1e-3 }, 'µM': { t: 'mol', f: 1e-6 }, 'nM': { t: 'mol', f: 1e-9 },
-        'mg/ml': { t: 'mass', f: 1 }, 'µg/ml': { t: 'mass', f: 1e-3 }, '% (w/v)': { t: 'mass', f: 10 }, '×': { t: 'x', f: 1 }
+        'g/ml': { t: 'mass', f: 1000 }, 'mg/ml': { t: 'mass', f: 1 }, 'µg/ml': { t: 'mass', f: 1e-3 }, 'ng/ml': { t: 'mass', f: 1e-6 },
+        '% (w/v)': { t: 'mass', f: 10 }, '×': { t: 'x', f: 1 }
     };
     var VOL = { 'l': 1, 'ml': 1e-3, 'µl': 1e-6 };
     var MASS = { 'g': 1, 'mg': 1e-3, 'µg': 1e-6 };
@@ -363,8 +364,10 @@
     }
     function fmtMassConc(gPerL) {
         var a = Math.abs(gPerL);
+        if (a >= 1000) return fmt(gPerL / 1000) + ' g/ml';
         if (a >= 0.1) return fmt(gPerL) + ' mg/ml';
-        return fmt(gPerL * 1e3) + ' µg/ml';
+        if (a >= 1e-4) return fmt(gPerL * 1e3) + ' µg/ml';
+        return fmt(gPerL * 1e6) + ' ng/ml';
     }
 
     // ---------------------------------------------------------------
